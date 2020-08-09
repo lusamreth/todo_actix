@@ -1,0 +1,27 @@
+// structure of todolist :
+/*
++TODOLIST:
+-t1-]                
+-t2-] => all are tasks
+-t3-]
+*/
+
+
+// we use base 64 encoding to send large data(such as image/text/vid) between multiple systems(internet) safely and reliably without any risk
+// of corrupting data or interoperability issue ; for eg ; ASCII use 7bits per char which is different from common modern computer that use byte
+// (8bits/char) therefore some parser might be broken to interpret or could execute uncessary modification on data thus yeilding corrupted
+// results;
+// The function that produce the hash are often called hash function or message digests and the output of that fx is called "digests"'
+// The digest itself is a string of bits with a fixed length; for eg; sha256 algorithm produce a digest with the length of 256 bits;
+
+// BASE64 encoding methods:
+// texts -> breaks into byte code(8bits) -> grouping byte code into contigious sequence of bit
+// -> divide into multiple groups with each letter consists of 4 bits -> convert those 4 bits into new decimal value -> use lookup to base64
+// table to find new letter -> regroup back
+
+/* Each 3 letter is transform into 4 new letters in base64 encoding value; If the letter is not enough it will add padding to fill its place*/
+// NOTE :  padding is just "=" sign to add to existed letter;
+// Formula factor the input of byte in ASCII and output in base64 = 4[1/3n] (general-overhead = 33%)
+// n is the number of given byte from ASCII input with the maximum of only 3 letters;
+
+// frame of reference : https://en.wikipedia.org/wiki/Base64#Decoding_Base64_without_padding;
