@@ -1,13 +1,13 @@
 use chrono::{DateTime, Datelike, Local, Utc, Weekday};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug,Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Taskdate {
-    day: Weekday,
-    num_day: u32,
-    month: u32,
-    year: i32,
-    time: String,
+    pub day: Weekday,
+    pub num_day: u32,
+    pub month: u32,
+    pub year: i32,
+    pub time: String,
 }
 
 fn num_to_month(num_month: i16) -> &'static str {
@@ -32,16 +32,29 @@ fn num_to_month(num_month: i16) -> &'static str {
 
 #[allow(dead_code)]
 const UNIVERSAL_FORM: &'static str = "%a %d %b %y %H:%M:%S%.3f";
-
+type Time = String;
 #[allow(dead_code)]
 impl Taskdate {
-    pub fn init_date<T: chrono::TimeZone + std::fmt::Debug>(chrono_obj: DateTime<T>) -> Taskdate {
+    pub fn make_time(h: i64, m: i64, s: i64) -> Time {
+        format!("{}:{}:{}", h, m, s)
+    }
+    pub fn new(day: Weekday, num_day: u32, month: u32, year: i32, time: &str) -> Self {
+        return Taskdate {
+            num_day,
+            month,
+            year,
+            time: String::from(time),
+            day,
+        };
+    }
+    fn init_date<T: chrono::TimeZone + std::fmt::Debug>(chrono_obj: DateTime<T>) -> Taskdate {
         let now = chrono_obj;
         let day = now.weekday();
         let month = now.month();
         let year = now.year();
         let num_day = now.day();
         let cur_time = now.time().to_string();
+        dbg!(cur_time.clone());
         println!("tmz {:?}", now.timezone());
         return {
             Taskdate {

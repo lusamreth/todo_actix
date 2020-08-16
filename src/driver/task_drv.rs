@@ -1,34 +1,35 @@
 use crate::db::Db;
 use crate::domain::resporitory_interface;
 use async_trait::async_trait;
+use futures::stream::StreamExt;
 use mongodb::{
     bson::{doc, to_bson, Bson},
     options,
 };
-use resporitory_interface::{DeleteRes, DocRes, InsertRes, Itaskresp, Taskid, UpdateRes,resperror};
 use resperror::DBERROR;
+use resporitory_interface::*;
 
 #[async_trait(?Send)]
 impl Itaskresp for Db {
-    async fn insert_task<T>(&self, entity: T) -> InsertRes where T:serde::Serialize {
+    async fn insert_task<T>(&self, entity: T) -> InsertRes
+    where
+        T: serde::Serialize,
+    {
         let insert_opt = None;
         let new_doc = to_bson(&entity).expect("msg");
-        if let Bson::Document(nd) = new_doc{
-            match self.collection.insert_one(nd, insert_opt).await{
+        if let Bson::Document(nd) = new_doc {
+            match self.collection.insert_one(nd, insert_opt).await {
                 Ok(col) => Ok(col),
-                Err(mdberr) => Err(DBERROR::Mongodb(mdberr))
+                Err(mdberr) => Err(DBERROR::Mongodb(mdberr)),
             }
-        }else{
+        } else {
             Err(DBERROR::Bson(None))
         }
     }
     async fn update_task<T: serde::Serialize>(&self, new_entity: T, id: Taskid<'_>) -> UpdateRes {
         let to_doc = to_bson(&new_entity).unwrap();
         if let Bson::Document(doc) = to_doc {
-            let cursor = self
-                .collection
-                .update_one(doc! {"_id":id}, doc, None)
-                .await;
+            let cursor = self.collection.update_one(doc! {"_id":id}, doc, None).await;
             match cursor {
                 Ok(ptr) => Ok(ptr),
                 Err(uerr) => Err(DBERROR::Mongodb(uerr)),
@@ -42,15 +43,15 @@ impl Itaskresp for Db {
         let del_cursor = self.collection.delete_one(query, None).await;
         match del_cursor {
             Ok(delc) => Ok(delc),
-            Err(del_err) => Err(DBERROR::Mongodb(del_err))
+            Err(del_err) => Err(DBERROR::Mongodb(del_err)),
         }
     }
     async fn clear_all_task(&self) -> DeleteRes {
         let query = doc! {};
         let clt_cursor = self.collection.delete_many(query, None).await;
-        match clt_cursor{
+        match clt_cursor {
             Ok(cr) => Ok(cr),
-            Err(cr_err) => Err(DBERROR::Mongodb(cr_err))
+            Err(cr_err) => Err(DBERROR::Mongodb(cr_err)),
         }
     }
     async fn find_task(&self, id: Taskid<'_>) -> DocRes {
@@ -61,9 +62,36 @@ impl Itaskresp for Db {
             .build();
 
         let cursor = self.collection.find_one(query, proiritized_opt).await;
-        match cursor{
+        match cursor {
             Ok(curs) => Ok(curs),
-            Err(cr_err) => Err(DBERROR::Mongodb(cr_err))
+            Err(cr_err) => Err(DBERROR::Mongodb(cr_err)),
+        }
+    }
+    async fn find_all(&self) -> BulkRes<mongodb::bson::Document> {
+        let query = doc! {};
+        let finder_curs = self.collection.find(query, None).await;
+        let mut err_acc = Vec::new();
+        match finder_curs {
+            Ok(mut cursor) => {
+                let mut emdvec = Vec::new();
+                while let Some(doc_res) = cursor.next().await {
+                    match doc_res {
+                        Ok(doc) => emdvec.push(doc),
+                        Err(doc_er) => {
+                            let err_format = DBERROR::Operation(format!(
+                                "Error while fetching tasks! Kind:{}",
+                                doc_er.kind
+                            ));
+                            err_acc.push(err_format)
+                        }
+                    }
+                }
+                return Ok(emdvec);
+            }
+            Err(curs_err) => {
+                err_acc.push(DBERROR::Mongodb(curs_err));
+                Err(err_acc)
+            }
         }
     }
 }

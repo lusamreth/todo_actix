@@ -1,35 +1,36 @@
-use std::env;
-use dotenv_codegen::dotenv;
 mod todo_gateway;
-use std::pin::Pin;
-use std::future::Future;
 use crate::db::Db;
+use std::future::Future;
+use std::pin::Pin;
+pub mod serializer; // no public
+                    //take out!
+pub mod task_gateway;
 #[allow(dead_code)]
-pub struct Gateway<'a>{
-    col:TodoCol<'a>
+pub struct Gateway {
+    col: TodoCol,
 }
 // type TodoCol = Box<dyn Fn() -> Pin<Box<dyn Future<Output = Db>>>>;
-type TodoCol<'a> = Box<dyn FnOnce() -> Pin<Box<dyn Future<Output = Db> + 'a>>>;
+type TodoCol = Box<dyn Fn() -> Pin<Box<dyn Future<Output = Db> + 'static>>>;
 
-impl Gateway<'_>{
-    #[allow(non_snake_case)]
-    pub async fn establish<Fn>(db_col : &str,envFn:Fn) -> Gateway<'_> where Fn : FnOnce(&str) -> String{
-        let env = envFn(db_col);
-        Gateway{
-            col: Box::new(||{
-                Box::pin(Db::fetch_collection(env))
-            })
+impl Gateway {
+    #[allow(non_snake_case, dead_code)]
+    pub async fn establish<Fx: 'static>(db_col: &str, envFn: Fx) -> Gateway
+    where
+        Fx: FnOnce(&str) -> String,
+    {
+        let param = envFn(&db_col);
+        Gateway {
+            col: Box::new(move || {
+                let pdb = Db::fetch_collection(param.clone());
+                Box::pin(pdb)
+            }),
         }
     }
 }
-fn fetch_env(arg:&str) -> String{
-    match dotenv::var(arg){
+#[allow(dead_code)]
+fn fetch_env(arg: &str) -> String {
+    match dotenv::var(arg) {
         Ok(var) => var,
-        Err(var_err) => panic!("No such variable {} exists \n details : {}",arg,var_err)
+        Err(var_err) => panic!("No such variable {} exists \n details : {}", arg, var_err),
     }
-}
-
-pub async fn built_todo_gateway() -> Gateway<'static>{
-    let todo = Gateway::establish("todo+col",fetch_env).await;
-    return todo;
 }

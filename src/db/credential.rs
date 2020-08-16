@@ -25,5 +25,4 @@ impl Admin {
             .build();
         return crd_opt;
     }
-    
 }

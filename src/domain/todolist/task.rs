@@ -1,37 +1,48 @@
 // mod task_date;
-use super::task_date::Taskdate;
-use serde::Serialize;
+use super::{task_date::Taskdate,BussRes};
+use serde::{Deserialize, Serialize};
 #[allow(dead_code)]
-#[derive(Debug,Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
     // task_id:String,
-    name: String,
-    created_at: Taskdate,
-    description: String,
-    completed_at: Option<Taskdate>,
+    pub name: String,
+    pub created_at: Taskdate,
+    pub modified_at: Taskdate,
+    pub(crate) description: String,
+    pub completed_at: Option<Taskdate>,
     pub completion: bool,
 }
+
 // name could be null or
 #[allow(dead_code)]
 impl Task {
-    fn new(name: String, desc: String) -> Self {
+    pub fn new(name: String, desc: String) -> BussRes<Self,String> {
         let now = Taskdate::new_local();
-        return {
-            Task {
-                name,
-                created_at: now,
-                description: desc,
-                completion: false,
-                completed_at: None,
-            }
+        if desc.len() < 1 { 
+            
+        }
+        let created_task = Task {
+            name,
+            created_at: now.clone(),
+            description: desc,
+            completion: false,
+            completed_at: None,
+            modified_at: now,
         };
+
+        return Ok(created_task)
     }
-    fn finish(&mut self) {
+    pub fn insert_created_at(&mut self, cta: Taskdate) {
+        self.created_at = cta;
+    }
+    pub fn insert_modified_at(&mut self, md_time: Taskdate) {
+        self.modified_at = md_time
+    }
+    pub fn finish(&mut self, completion_time: Taskdate) {
         self.completion = true;
-        let now = Taskdate::new_local();
-        self.completed_at = Some(now);
+        self.completed_at = Some(completion_time);
     }
-    fn unfinish(&mut self) {
+    pub fn unfinish(&mut self) {
         self.completion = false;
         // let now = Taskdate::init_date();
         self.completed_at = None;

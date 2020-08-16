@@ -1,4 +1,3 @@
-#[macro_use]
 use dotenv_codegen::dotenv;
 use mongodb::Collection;
 

@@ -1,98 +1,101 @@
-
-use crate::domain;
-use domain::resporitory_interface::ITodoresp;
-use json::{JsonValue,object};
-use async_trait::async_trait;
 use super::Gateway;
-
-use crate::port::todo_serv::{Todolistport,PortRes};
+use crate::domain;
+use crate::port::{
+    error::{PortError::*, *},
+    todo_serv::{PortRes, Todolistport},
+};
+use async_trait::async_trait;
+use domain::resporitory_interface::ITodoresp;
 use domain::todolist::list::Todolist;
-use crate::db::Db;
-
-async fn todo_col() -> Db{
-    Db::fetch_collection("env+var".to_string()).await
-}
+use json::{object, JsonValue};
 
 #[async_trait(?Send)]
-impl <'a> Todolistport<'a> for Gateway<'_>{
-    async fn update_list(id:&str,new_entity:Todolist) -> PortRes<()> {
-        let db = todo_col().await;
+impl Todolistport for Gateway {
+    async fn update_list<T: serde::Serialize>(&self, id: &str, new_entity: T) -> PortRes<()> {
+        let db = (self.col)().await;
         let patcher = db.update_todo(new_entity, id).await;
-        match patcher{
+        match patcher {
             Ok(u_res) => {
                 let match_count = u_res.matched_count.to_string();
                 let confirmed = u_res.modified_count.to_string();
                 let json_ct = object! { matched:match_count,confirmation : confirmed };
-                println!("{:#?}",json_ct);
-                if u_res.matched_count < 0{
+                println!("{:#?}", json_ct);
+                if u_res.matched_count < 0 {
                     // cannot find doc!
-                    Err(String::from("No document match the index!"))
-                }else if u_res.modified_count < 0{
+                    Err(External("No document match the index!".to_string()).operation_err())
+                } else if u_res.modified_count < 0 {
                     // failed to write updates
-                    Err(String::from("confirmation of updating failed"))
-                }else{
+                    Err(External("confirmation of updating failed".to_string()).operation_err())
+                } else {
                     Ok(())
                 }
             }
-            Err(mdb_err) => Err(mdb_err.get_string())
+            Err(mdb_err) => panic!(Internal(mdb_err.get_string()).emit_internal()),
         }
     }
 
-    async fn delete_list(id:&str) -> PortRes<()> {
-        let db = todo_col().await;
+    async fn delete_list(&self, id: &str) -> PortRes<()> {
+        let db = (self.col)().await;
         let deletion = db.delete(id).await;
-        match deletion{
+        match deletion {
             Ok(ct) => {
                 let string_ct = ct.deleted_count.to_string();
-                let json_ct = object! { mdb_json : string_ct };
-                println!("{:#?}",json_ct);
-                
-                if ct.deleted_count < 0{
+                let json_ct = object! { DeleteAck : string_ct };
+                println!("{:#?}", json_ct);
+
+                if ct.deleted_count < 0 {
                     // deletion failed due to any err!
-                    Err("Deletion operation does not take into affect!".to_string())
-                }else{
+                    Err(
+                        External("Deletion operation does not take into affect!".to_string())
+                            .operation_err(),
+                    )
+                } else {
                     Ok(())
                 }
-            },
-            Err(mdb_err) => Err(mdb_err.get_string())
+            }
+            Err(mdb_err) => panic!(Internal(mdb_err.get_string()).emit_internal()),
         }
     }
-    
-    async fn create_list(actor_input : Todolist) -> PortRes<()> {
-        let db = todo_col().await;
+
+    async fn create_list(&self, actor_input: Todolist) -> PortRes<String> {
+        let db = (self.col)().await;
+
         let creation = db.insert_todo(actor_input).await;
         match creation {
             Ok(ct) => {
                 let string_ct = ct.inserted_id.to_string();
-                let json_ct = object! { mdb_json : string_ct };
-                println!("{:#?}",json_ct);
-                Ok(())
-            },
-            Err(mdb_err) => Err(mdb_err.get_string())
+                println!("{:#?}", string_ct);
+                Ok(string_ct)
+            }
+            Err(mdb_err) => panic!(Internal(mdb_err.get_string()).emit_internal()),
         }
-    } 
+    }
 
-    async fn find_list(self,id:&str) -> PortRes<JsonValue> {
+    async fn find_list(&self, id: &str) -> PortRes<Todolist> {
         let db = (self.col)().await;
         let tdl = db.find_todo(id).await;
-        match tdl{
-            Ok(doc) => {
-                let doc_json = match doc {
-                    Some(avialable) => {
-                        let to_string = avialable.to_string();
-                        object! {list:to_string}
-                    },
-                    None => {
-                        let empty = String::new();
-                        object! {list:empty}
-                    }
-                };
-                return Ok(doc_json);
+        match tdl {
+            Ok(doc) => match doc {
+                Some(avialable) => {
+                    let name = avialable.get("name").unwrap().to_string();
+                    let output = Todolist::new(&name);
+                    return Ok(output);
+                }
+                None => {
+                    let mut ext_err =
+                        External(format!("The list with an id of {} is not found!", id));
+                    Err(ext_err.operation_err())
+                }
             },
             Err(mdb_err) => {
-                let error_str = mdb_err.get_string();
-                return Err(error_str);
+                let error_str = PortError::convert(mdb_err);
+                Err(error_str)
             }
         }
     }
 }
+
+// Some key notes !
+/*
+
+*/

@@ -1,95 +1,31 @@
+use super::error::PortException;
+use crate::domain::todolist::{list::Todolist, task::Task};
 use async_trait::async_trait;
 use mongodb::bson::Document;
-use crate::driver::task_drv;
-use crate::domain::resporitory_interface;
-use crate::db::Db;
-use resporitory_interface::{Itaskresp,ITodoresp,resperror::DBERROR,Todoid};
-use crate::domain::todolist::{task::Task,list::Todolist};
 
 #[allow(type_alias_bounds)]
 #[allow(dead_code)]
-pub type PortRes<T:Send + 'static> = Result<T,String>;
+pub type PortRes<T: Send + 'static> = Result<T, PortException>;
+pub type MultipleExceptions = Vec<PortException>;
+pub type BundlePortRes<T> = Result<Vec<T>, MultipleExceptions>;
 
 #[async_trait(?Send)]
-pub trait Todolistport<'a>{
-    async fn find_list(self,id:&str) -> PortRes<json::JsonValue>;
-    async fn create_list(actor_input:Todolist) -> PortRes<()>;
-    async fn update_list(id:&str,new_entity:Todolist) -> PortRes<()>;
-    async fn delete_list(id:&str) -> PortRes<()>;
+pub trait Todolistport {
+    async fn find_list(&self, id: &str) -> PortRes<Todolist>;
+    async fn create_list(&self, actor_input: Todolist) -> PortRes<String>;
+    async fn update_list<T: serde::Serialize>(&self, id: &str, new_entity: T) -> PortRes<()>;
+    async fn delete_list(&self, id: &str) -> PortRes<()>;
+    // async fn append_to_list(&self,input:Task,todo_id:&str) -> PortRes<String>;
+}
+pub trait BsonConvertor {
+    fn to_bson(&self) -> Document;
 }
 
-enum PortError {
-    Internal(String),
-    External(String)
+#[async_trait(?Send)]
+pub trait Taskport {
+    async fn find_task(&self, id: &str) -> PortRes<Task>;
+    async fn create_task(&self, task_input: Task) -> PortRes<String>;
+    async fn delete_task(&self, id: &str) -> PortRes<bool>;
+    async fn update_task(&self, id: &str, new_document: Task) -> PortRes<()>;
+    async fn list_all(&self) -> BundlePortRes<Task>;
 }
-impl PortError{
-    pub fn emit_internal(&self){
-        if let PortError::Internal(in_err) = self{
-            println!("Internal Error from Driver entity!");
-            println!("Details : \n");
-            println!("{}",in_err);
-            panic!("Error internal!");
-        }else{
-            println!("This error is external! go to transfer!")
-        }
-    }
-    pub fn transfer(&self) -> String{
-        if let PortError::External(ex_err) = self{
-            return ex_err.to_owned();
-        }else{
-            panic!("This error is not transferable!")
-        }
-    }
-    fn bundle_emit(buffer:Vec<Self>){
-        buffer.iter().for_each(|each_err| {
-            println!("Emiting from bundles!");
-            if let PortError::Internal(_) = each_err{
-                each_err.emit_internal();
-            }else {
-                each_err.transfer();
-            }
-        })
-    }
-}
-// polymorphism : the provision of a single interface to multiple entites with different concrete type ;
-/*  
-    interface with function draw! <Trait-object>
-    trait Component{
-        fn draw() -> String;
-    }
-    // concrete types: 
-    struct pen{..}
-    struct pencil{..}
-
-    // implementations
-    impl Component for pen{
-        fn draw() -> String{..}
-    }
-    impl Component for pencil{
-        fn draw() -> String{..}
-    }
-    // this struct stores a vector of trait object!
-    struct Comp{
-        components:Vec<Component>
-    }
-    impl Comp{
-        fn run(&self){
-            self.components.iter().foreach(|cp| {
-                // calling the interface's function , the runtime will peform polymorphic operations!
-                // the vtable's pointer in trait object will point to the vtable of each concrete implementation
-                // than vtable will then point to the actual implementation of that methods;
-                cp.draw()
-            })
-        }
-    }
-    *Visualization :
-    =>This lookup transformation will be executed at runtime only since it will know where those trait object's
-    method will be called during application running;
-    /*********************/
-    |Data-object| <--- |Trait objects|
-    |pen's members|    |vtb's ptr| ---> |pen's vtable| -> |actual draw impl|
-    |pencil's members| |vtb's ptr| ---> |pencil's vtable| -> |actual draw impl|
-    /*********************/
-    Note : vtable has other components such as size and align!;In rust the drop function is automatically impl;
-    So the table will also include that(drop's ptr) as well!;
-*/
