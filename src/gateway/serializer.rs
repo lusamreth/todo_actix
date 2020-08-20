@@ -1,28 +1,9 @@
-use crate::domain::todolist::{self, list::TaskStorage, task::Task};
+use crate::{port::io::{DatabaseDoc,JoinedOutput}, domain::todolist::{self, task_date::Taskdate, task::Task}};
 use mongodb::bson::{doc, Document};
-use serde::Serialize;
-use std::fmt;
-use todolist::task_date::Taskdate;
-#[derive(Serialize)]
-struct TaskStorepartial {
-    pub task_store: TaskStorage,
-}
-// abstraction layer built to remove dependencies
-pub struct DatabaseDoc<T>(T);
+use dotenv::dotenv;
 
-impl<T> DatabaseDoc<T> {
-    pub fn get_doc(self) -> T {
-        return self.0;
-    }
-    pub fn create(itm: T) -> Self {
-        DatabaseDoc(itm)
-    }
-}
-impl<T: fmt::Display> fmt::Debug for DatabaseDoc<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "Doc-wrapper {}", self.0)
-    }
-}
+// abstraction layer built to remove dependencies
+
 use mongodb::bson::Bson;
 impl From<Task> for Document {
     fn from(tk: Task) -> Self {
@@ -43,11 +24,10 @@ impl From<Task> for Document {
 }
 
 impl From<Document> for Task {
-    fn from(_: Document) -> Self {
+    fn from(task: Document) -> Self {
         todo!()
     }
 }
-struct pipeline {}
 pub fn push_item(itm: Vec<Task>) -> DatabaseDoc<Document> {
     let transform = itm
         .into_iter()
@@ -59,29 +39,68 @@ pub fn push_item(itm: Vec<Task>) -> DatabaseDoc<Document> {
 
     let push_stage = doc! {
         "$set":{
-            "$push":transform,
+            "task_store.tasks":{
+                "$push":transform,
+            }
         }
     };
     return DatabaseDoc::create(push_stage);
 }
+pub struct Matchstage{
+    from:String,
+    localfield:String,
+    foreignfield:String,    
+    as_domain:String
+}
 
-pub fn create_pipelines() {}
 
-#[test]
-fn test() {
-    let cmt = Taskdate::new_local();
-    let new = Task {
-        name: "opa".to_string(),
-        created_at: cmt.clone(),
-        description: "oaaaa".to_string(),
-        completed_at: None,
-        completion: false,
-        modified_at: cmt,
+
+pub fn match_pipeline(match_stage:Matchstage) -> DatabaseDoc<Document>{
+    let Matchstage {
+        from:a,
+        localfield:b,
+        foreignfield:c,    
+        as_domain:d
+    } = match_stage;
+    let look_up_pipe = doc! {
+        "$lookup":{
+        "from":a,
+        "localField":b,
+        "foreignField":c,
+        "as":d
+        }
     };
-    let mut abr = Vec::new();
-    for _ in 0..10 {
-        abr.push(new.clone())
+    DatabaseDoc::create(look_up_pipe)
+}
+
+impl From<Document> for JoinedOutput {
+    fn from(bulk_res: Document) -> Self {
+        let to_td = move |date:&Bson|{
+            let task_date:Taskdate = mongodb::bson::from_bson(date.clone()).expect("format error!");
+            return task_date
+        };
+
+        let name = bulk_res.get("list_name").unwrap();
+        let modifed_at = to_td(bulk_res.get("modifed_at").unwrap());
+        let created_at = to_td(bulk_res.get("created_at").unwrap());
+        let due_date = to_td(bulk_res.get("due_date").unwrap());
+        let dued = bulk_res.get("dued").unwrap().as_bool().unwrap();   
+        let task_store = mongodb::bson::from_bson(bulk_res.get("task_store").unwrap().clone()).expect("failed");
+        let done = bulk_res.get("done").unwrap().as_bool().unwrap();
+        let progress= bulk_res.get("progress").unwrap().as_f64().unwrap() as f32;
+
+        return {
+            JoinedOutput{ created_at, modifed_at:Some(modifed_at) , done, progress, list_name:name.to_string(), due_date:Some(due_date), dued, task_store}
+        }
     }
-    let success = push_item(abr);
-    println!("Sucess wrapper {:?}", success);
+}
+/*
+TODO_LIST_COLLECTION
+TODO_TASK_COLLECTION
+*/
+
+// from a list perspective!
+pub fn list_task_linkage()-> Matchstage {
+    let task_col = dotenv!("TODO_TASK_COLLECTION");
+    Matchstage{ from: task_col.to_string(), localfield: "_id".to_string(), foreignfield: "_id".to_string(), as_domain: "task_store".to_string()}
 }

@@ -25,3 +25,19 @@
 // n is the number of given byte from ASCII input with the maximum of only 3 letters;
 
 // frame of reference : https://en.wikipedia.org/wiki/Base64#Decoding_Base64_without_padding;
+
+What will our error looks like when presenting ?
+Json { 
+    type : "/bussiness_logic_error",
+    sub_type : "/invalid input",
+    title: "The input's parameters are invalid "
+    details: {
+        message : "....",
+        invalid-params : [{
+            name: "age",
+            reason : "negative number!"
+        }]
+    },
+    instance : {task name/todolist},
+    code: n/a
+}

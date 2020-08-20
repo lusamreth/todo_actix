@@ -4,12 +4,12 @@ use crate::port::error::*;
 use crate::port::todo_serv::Taskport;
 use chrono::Weekday;
 type EditRes<T> = UsecaseRes<Output<T>, PortException>;
-use serde::Serialize;
+use serde::{Serialize,Deserialize};
 use std::str::FromStr;
-#[derive(Serialize)]
-struct UpdateTaskField {
-    name: String,
-    desc: String,
+#[derive(Serialize,Deserialize)]
+pub struct UpdateTaskField {
+    pub name: String,
+    pub desc: String,
     pub completion: bool,
 }
 
@@ -60,13 +60,13 @@ async fn proxy(
     }
 }
 
-async fn build_executor(comp_time: Option<Taskdate>) -> ExecFun {
+pub async fn build_executor(comp_time: Option<Taskdate>) -> ExecFun {
     let closure =
         |repo: Box<dyn Taskport>, new_fields: UpdateTaskField, id: String| -> ClosureFuture {
             let input_name = new_fields.name.to_string();
             let input_desc = new_fields.desc.to_string();
             let mut catch_err: Option<PortException> = None;
-            let mut new_task = Task::new(input_name, input_desc);
+            let new_task = Task::new(input_name, input_desc);
             let mut buffer= Vec::with_capacity(1);
 
             match new_task {

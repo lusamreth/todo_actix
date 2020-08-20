@@ -32,18 +32,23 @@ async fn test_injector() {
     assert_eq!(res, "omomomom")
 }
 use actix_web::web;
-async fn run_hello(appdata: web::Data<Gateway>) -> web::HttpResponse {
-    let res = appdata.find("apple").await;
-    return web::HttpResponse::Ok().body(res);
+
+async fn proxy(p:String) -> String{
+   format!("from proxy async param : {}",p)
 }
-#[actix_rt::main]
-async fn test_actix() -> std::io::Result<()> {
-    actix_web::HttpServer::new(|| {
-        actix_web::App::new()
-            .app_data(Gateway {})
-            .route("/run", web::get().to(run_hello))
-    })
-    .bind("127.0.0.1:8088")?
-    .run()
-    .await
+type Exec = Box<dyn FnOnce(String) -> Pin<Box<dyn Future<Output = String> + 'static>>>;
+
+fn generate_proxy() -> Exec{
+    let closure:Exec = Box::new(move |a| {
+        Box::pin(proxy(a))
+    });
+    return closure;
 }
+
+#[actix_rt::test]
+async fn test_proxy_gen(){
+    let gen = generate_proxy();
+    let result:String = gen("apple".to_string()).await;
+    println!("{}",result);
+}
+

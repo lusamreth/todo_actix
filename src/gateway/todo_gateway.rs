@@ -1,14 +1,14 @@
 use super::Gateway;
 use crate::domain;
 use crate::port::{
+    io::JoinedOutput,
     error::{PortError::*, *},
-    todo_serv::{PortRes, Todolistport},
+    todo_serv::{PortRes, Todolistport,BundlePortRes,AggregationService},
 };
 use async_trait::async_trait;
 use domain::resporitory_interface::ITodoresp;
 use domain::todolist::list::Todolist;
-use json::{object, JsonValue};
-
+use json::object;
 #[async_trait(?Send)]
 impl Todolistport for Gateway {
     async fn update_list<T: serde::Serialize>(&self, id: &str, new_entity: T) -> PortRes<()> {
@@ -84,12 +84,49 @@ impl Todolistport for Gateway {
                 None => {
                     let mut ext_err =
                         External(format!("The list with an id of {} is not found!", id));
-                    Err(ext_err.operation_err())
+                    let mut exp = ext_err.operation_err();
+                    exp.sub_type = String::from("NOTFOUND");
+                    Err(exp)
                 }
             },
             Err(mdb_err) => {
                 let error_str = PortError::convert(mdb_err);
                 Err(error_str)
+            }
+        }
+    }
+    
+}
+
+
+// pub created_at: Taskdate,
+// // likely to change
+// pub modifed_at: Option<Taskdate>,
+// pub done: bool,
+// //dynamic
+// pub progress: f32,
+// pub list_name: String,
+// pub due_date: Option<Taskdate>,
+// pub dued: bool,
+// // dynamic!
+// pub task_store: Vec<Task>,
+
+#[async_trait(?Send)]
+impl AggregationService for Gateway{
+    async fn merge_task_list<T:serde::Serialize,R>(&self,pipes:Vec<T>) -> BundlePortRes<JoinedOutput> {
+        let db = (self.col)().await;
+        let aggregation = db.aggregate(pipes).await;
+        match aggregation {
+            Ok(bulk_res) => {
+                let vjo = bulk_res.into_iter().map(|res|{
+                    JoinedOutput::from(res)
+                }).collect::<Vec<JoinedOutput>>();
+                Ok(vjo)
+            },
+            Err(bulk_err) => {
+                Err(bulk_err.into_iter().map(|each_err|{
+                    PortError::convert(each_err)
+                }).collect())
             }
         }
     }

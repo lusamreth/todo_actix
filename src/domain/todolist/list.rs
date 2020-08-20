@@ -15,11 +15,13 @@ pub struct Todolist {
     due_date: Option<Taskdate>,
     dued: bool,
     // dynamic!
-    task_store: TaskStorage,
+    pub task_store: TaskStorage,
 }
+
+type Taskid = String;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TaskStorage {
-    pub tasks: Vec<Task>,
+    pub tasks: Vec<Taskid>,
     pub count: usize,
 }
 
@@ -31,6 +33,9 @@ impl TaskStorage {
             tasks: Vec::new(),
             count: 0,
         };
+    }
+    pub fn empty(&self) -> bool{
+        self.count == 0
     }
 }
 
@@ -49,18 +54,6 @@ impl Todolist {
             progress: 0.00,
         };
     }
-
-    pub fn calculate_progress(&self) -> f32 {
-        let full_len = self.task_store.count;
-        let mut count = 0;
-        self.task_store.tasks.iter().for_each(|e| {
-            if e.completion == true {
-                count += 1;
-            }
-        });
-        return (count / full_len) as f32;
-    }
-
     pub fn due(&mut self) {
         self.dued = true
     }

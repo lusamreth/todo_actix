@@ -6,6 +6,7 @@ mod credential;
 
 pub async fn makedb() -> mongodb::Database {
     let url = dotenv!("DB_HOST");
+    dbg!("this is host {}",url);
     let admin = credential::Admin::new(
         dotenv!("USERNAME").to_string(),
         dotenv!("PASSWORD").to_string(),
@@ -18,6 +19,7 @@ pub async fn makedb() -> mongodb::Database {
     }
 }
 
+#[derive(Clone)]
 pub struct Db {
     pub collection: Collection,
 }

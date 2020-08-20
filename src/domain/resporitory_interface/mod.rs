@@ -27,10 +27,12 @@ pub trait ITodoresp {
         T: Serialize;
     async fn delete(&self, id: Todoid<'_>) -> DeleteRes;
     async fn clear_all(&self) -> DeleteRes;
-    async fn find_all(&self) -> BulkRes<DocRes>;
+    async fn find_all(&self) -> BulkRes<Document>;
     async fn find_todo(&self, id: Todoid<'_>) -> DocRes;
+    async fn aggregate<T:Serialize>(&self,pipeline:Pipeline<T>) -> BulkRes<Document>;
 }
 
+pub type Pipeline<T> = Vec<T>;
 pub type Taskid<'a> = &'a str;
 pub type Todoid<'a> = &'a str;
 pub type InsertRes = Result<results::InsertOneResult, DBERROR>;

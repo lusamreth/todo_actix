@@ -6,7 +6,8 @@ use list::Todolist;
 
 type CreationRes<T> = UsecaseRes<Output<T>, PortException>;
 type InsertId = String;
-async fn execute(db: impl Todolistport, name: String) -> CreationRes<InsertId> {
+pub async fn execute(db: impl Todolistport, name: String) -> CreationRes<InsertId> {
+    dbg!("Creating todolist!");
     let new = Todolist::new(name.as_str());
     let creation = db.create_list(new).await;
     match creation {

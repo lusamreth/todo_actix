@@ -5,7 +5,7 @@ use crate::port::{error::PortException, todo_serv::*};
 type MultipleFinderRes<T> = UsecaseRes<Output<T>, MultipleExceptions>;
 type OneFinderRes<T> = UsecaseRes<Output<T>, PortException>;
 
-async fn list_all_tasks(repo: impl Taskport) -> MultipleFinderRes<Vec<Task>> {
+pub async fn list_all_tasks(repo: impl Taskport) -> MultipleFinderRes<Vec<Task>> {
     let retrieval = repo.list_all().await;
     // still retrive the same functionality
     match retrieval {
@@ -16,7 +16,7 @@ async fn list_all_tasks(repo: impl Taskport) -> MultipleFinderRes<Vec<Task>> {
     }
 }
 
-async fn find_one_task(repo: impl Taskport, id: &str) -> OneFinderRes<Task> {
+pub async fn find_one_task(repo: impl Taskport, id: &str) -> OneFinderRes<Task> {
     let finder = repo.find_task(id).await;
     match finder {
         Ok(found) => Ok(Output {
@@ -25,3 +25,7 @@ async fn find_one_task(repo: impl Taskport, id: &str) -> OneFinderRes<Task> {
         Err(err) => Err(err),
     }
 }
+use futures::{Stream,stream};
+
+type ManyFinderRes<T> = UsecaseRes<Output<T>,MultipleExceptions>;
+

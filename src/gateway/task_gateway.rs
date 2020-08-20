@@ -8,6 +8,7 @@ use crate::port::{
     todo_serv::{BundlePortRes, PortRes},
 };
 use async_trait::async_trait;
+use mongodb::bson::Document;
 
 type CreationId = String;
 
@@ -54,7 +55,7 @@ impl Taskport for Gateway {
 
     async fn create_task(&self, task_input: Task) -> PortRes<CreationId> {
         let db = (self.col)().await;
-        let creator = db.insert_task(task_input).await;
+        let creator = db.insert_task(Document::from(task_input)).await;
         match creator {
             Ok(create_res) => {
                 let id = create_res.inserted_id;

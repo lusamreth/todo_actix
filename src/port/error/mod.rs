@@ -1,4 +1,8 @@
 use crate::domain::resporitory_interface::resperror::DBERROR;
+mod variables;
+pub use variables::*;
+
+#[derive(Debug,Clone)]
 pub enum PortError {
     Internal(String),
     External(String),
@@ -14,24 +18,12 @@ PortErrorExtender {
 **/
 
 //sub-type is dynamic since the coverage is not too broad;
+#[derive(Debug,Clone)]
 pub struct PortException {
-    main_type: String,
+    pub main_type: String,
     pub sub_type: String,
-    message: String,
-    interface_type: Option<PortError>,
-}
-
-pub trait Exception {
-    fn extend_input(&self) -> PortException;
-    fn convert<T>(err: T) -> PortException
-    where
-        T: Into<PortException>;
-    fn assert_type(&mut self, input_type: String, sub_type: String) -> PortException;
-}
-
-
-pub trait BussinessError{
-    fn domain_err(&mut self) -> PortException;
+    pub message: String,
+    pub interface_type: Option<PortError>,
 }
 
 impl BussinessError for PortError {
@@ -40,7 +32,7 @@ impl BussinessError for PortError {
         dbg!(msg);
         // debug
         let mt = "BussinessError".to_owned().to_string();
-        let sub_type = String::from("IO-Error");
+        let sub_type = String::from("n/a");
         return self.assert_type(mt, sub_type);
     }
 }
@@ -89,16 +81,12 @@ impl PortError {
         })
     }
 }
-pub trait OptError {
-    const main_type: &'static str = "Operational";
-    fn operation_err(&mut self) -> PortException;
-}
 
 impl OptError for PortError {
     fn operation_err(&mut self) -> PortException {
         let msg = self.transfer();
         let mt = Self::main_type.to_owned().to_string();
-        let sub_type = String::from("IO-Error");
+        let sub_type = String::from(OperationalSubtype::IO);
         return self.assert_type(mt, sub_type);
     }
     const main_type: &'static str = "Operational";
@@ -145,31 +133,11 @@ impl Into<PortException> for DBERROR {
         }
     }
 }
+use std::fmt::{Display,Formatter};
+impl Display for PortException {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f,"main-type : {}\nsub-type : {}\nmessage:{}\ninterface_type : {:?}\n",self.main_type,self.sub_type,self.message,self.interface_type)
+    } 
+}
 
-//Error Documentation!
-// Error handling diagram of its transformation
-/*
-                        [propergate]                        [Advanced-to-Exception]
-(*)-Driver-Error(database) --------------> PortError  -----GTW-----> Usecase  -----------> |Conversion==Interface|
-(Driven adapter)                 (adapter implementation)         (App-layer)           [Http-layer-most_outer-ring]
 
-*Coercsion from porterror to external adapter exception;Throwable errors should be propergate back to consumer in a
-Controllable and comprehensible manner;
-
-Error-flow-from
-            [Inject]
-(?)-RestApi ------> Port ==> Conversion-interface<T:Generic> ----> Foreign-exceptions(json) <---- |ACTIX_WEB_INTERFACE|
-
-Diagram components:
-+ ------> : advance to as the nature of application progress
-+ GTW : gateway injection into usecase via port(interface)
-+ * : mean general flow
-+ ? : mean application's component flow
-+ |[interface]| : mean adapted to that [interface]
-
-*Usecase and gateway result may varies but the change of gateway should not distrupt the usecase services!
-
-What will Usecase Result conversion will look like if the outer adapter is http?
-Attempt: usecase service will still inherit the service from gateway thereforce same output but with additional
-layer of successfull message; (But that's a presenter job?)
-*/

@@ -31,6 +31,9 @@ impl Gateway {
 fn fetch_env(arg: &str) -> String {
     match dotenv::var(arg) {
         Ok(var) => var,
-        Err(var_err) => panic!("No such variable {} exists \n details : {}", arg, var_err),
+        Err(var_err) => panic!("No such variable {} exists \ndetails : {}", arg, var_err),
     }
+}
+pub async fn make_gateway() -> Gateway{
+    Gateway::establish("TODO_TASK_COLLECTION",fetch_env).await
 }

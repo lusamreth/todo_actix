@@ -1,0 +1,31 @@
+//Error Documentation!
+// Error handling diagram of its transformation
+/*
+                        [propergate]                        [Advanced-to-Exception]
+(*)-Driver-Error(database) --------------> PortError  -----GTW-----> Usecase  -----------> |Conversion==Interface|
+(Driven adapter)                 (adapter implementation)         (App-layer)           [Http-layer-most_outer-ring]
+
+*Coercsion from porterror to external adapter exception;Throwable errors should be propergate back to consumer in a
+Controllable and comprehensible manner;
+
+Error-flow-from
+            [Inject]
+(?)-RestApi ------> Port ==> Conversion-interface<T:Generic> ----> Foreign-exceptions(json) <---- |ACTIX_WEB_INTERFACE|
+
+Diagram components:
++ ------> : advance to as the nature of application progress
++ GTW : gateway injection into usecase via port(interface)
++ * : mean general flow
++ ? : mean application's component flow
++ |[interface]| : mean adapted to that [interface]
+
+*Usecase and gateway result may varies but the change of gateway should not distrupt the usecase services!
+
+What will Usecase Result conversion will look like if the outer adapter is http?
+Attempt: usecase service will still inherit the service from gateway thereforce same output but with additional
+layer of successfull message; (But that's a presenter job?) <--- this violate the Single Responsibility Rule!
+
+// The api will convey message on the presentation layer inside http implementation to abstract the work from 
+usecase service that suppose to only serve as pure output and input interactor;
+
+*/
