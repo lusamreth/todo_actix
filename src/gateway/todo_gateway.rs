@@ -1,14 +1,16 @@
 use super::Gateway;
 use crate::domain;
 use crate::port::{
-    io::JoinedOutput,
     error::{PortError::*, *},
-    todo_serv::{PortRes, Todolistport,BundlePortRes,AggregationService},
+    io::JoinedOutput,
+    todo_serv::{AggregationService, BundlePortRes, PortRes, Todolistport},
 };
 use async_trait::async_trait;
 use domain::resporitory_interface::ITodoresp;
 use domain::todolist::list::Todolist;
 use json::object;
+use mongodb::bson::{Bson,Document};
+
 #[async_trait(?Send)]
 impl Todolistport for Gateway {
     async fn update_list<T: serde::Serialize>(&self, id: &str, new_entity: T) -> PortRes<()> {
@@ -60,10 +62,14 @@ impl Todolistport for Gateway {
     async fn create_list(&self, actor_input: Todolist) -> PortRes<String> {
         let db = (self.col)().await;
 
-        let creation = db.insert_todo(actor_input).await;
+        let creation = db.insert_todo(Document::from(actor_input)).await;
         match creation {
             Ok(ct) => {
-                let string_ct = ct.inserted_id.to_string();
+                let sct = ct.inserted_id;
+                let mut string_ct = String::new();
+                if let Bson::ObjectId(stdr) = sct{
+                    string_ct.push_str(&stdr.to_string());
+                }
                 println!("{:#?}", string_ct);
                 Ok(string_ct)
             }
@@ -95,9 +101,7 @@ impl Todolistport for Gateway {
             }
         }
     }
-    
 }
-
 
 // pub created_at: Taskdate,
 // // likely to change
@@ -112,22 +116,25 @@ impl Todolistport for Gateway {
 // pub task_store: Vec<Task>,
 
 #[async_trait(?Send)]
-impl AggregationService for Gateway{
-    async fn merge_task_list<T:serde::Serialize,R>(&self,pipes:Vec<T>) -> BundlePortRes<JoinedOutput> {
+impl AggregationService for Gateway {
+    async fn merge_task_list<T: serde::Serialize>(
+        &self,
+        pipes: Vec<T>,
+    ) -> BundlePortRes<JoinedOutput> {
         let db = (self.col)().await;
         let aggregation = db.aggregate(pipes).await;
         match aggregation {
             Ok(bulk_res) => {
-                let vjo = bulk_res.into_iter().map(|res|{
-                    JoinedOutput::from(res)
-                }).collect::<Vec<JoinedOutput>>();
+                let vjo = bulk_res
+                    .into_iter()
+                    .map(|res| JoinedOutput::from(res))
+                    .collect::<Vec<JoinedOutput>>();
                 Ok(vjo)
-            },
-            Err(bulk_err) => {
-                Err(bulk_err.into_iter().map(|each_err|{
-                    PortError::convert(each_err)
-                }).collect())
             }
+            Err(bulk_err) => Err(bulk_err
+                .into_iter()
+                .map(|each_err| PortError::convert(each_err))
+                .collect()),
         }
     }
 }

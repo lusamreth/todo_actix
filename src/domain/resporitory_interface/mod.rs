@@ -29,7 +29,7 @@ pub trait ITodoresp {
     async fn clear_all(&self) -> DeleteRes;
     async fn find_all(&self) -> BulkRes<Document>;
     async fn find_todo(&self, id: Todoid<'_>) -> DocRes;
-    async fn aggregate<T:Serialize>(&self,pipeline:Pipeline<T>) -> BulkRes<Document>;
+    async fn aggregate<T: Serialize>(&self, pipeline: Pipeline<T>) -> BulkRes<Document>;
 }
 
 pub type Pipeline<T> = Vec<T>;

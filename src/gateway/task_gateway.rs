@@ -1,15 +1,14 @@
 use super::Gateway;
 use crate::domain::resporitory_interface::Itaskresp;
 use crate::domain::todolist::task::Task;
-use crate::domain::todolist::task_date;
+use crate::domain::todolist::task_date::Taskdate;
 use crate::port::todo_serv::Taskport;
 use crate::port::{
     error::*,
     todo_serv::{BundlePortRes, PortRes},
 };
 use async_trait::async_trait;
-use mongodb::bson::Document;
-
+use mongodb::bson::{self, Bson, Document};
 type CreationId = String;
 
 #[async_trait(?Send)]
@@ -26,16 +25,18 @@ impl Taskport for Gateway {
                     let task_name = doc.get("name").unwrap();
                     let desc = doc.get("description").unwrap();
                     let input_task = Task::new(task_name.to_string(), desc.to_string());
-                    let existed = doc.get("created_at").unwrap().to_string();
-                    let ip:Result<Task,PortException> = match input_task {
+                    let existed = bson::from_bson(doc.get("created_at").unwrap().clone())
+                        .expect("errpr here!");
+                    dbg!(&existed);
+                    let ip: Result<Task, PortException> = match input_task {
                         Ok(mut task) => {
-                            task.insert_created_at(task_date::Taskdate::from_string(existed));
+                            task.insert_created_at(Taskdate::from_string(existed));
                             Ok(task)
-                        },
+                        }
                         Err(bus_err) => {
-                            let bussiness_err:Result<Task,PortException> = Err(PortError::External(bus_err).domain_err());
-                            return bussiness_err
-
+                            let bussiness_err: Result<Task, PortException> =
+                                Err(PortError::External(bus_err).domain_err());
+                            return bussiness_err;
                         }
                     };
                     return ip;
@@ -59,7 +60,11 @@ impl Taskport for Gateway {
         match creator {
             Ok(create_res) => {
                 let id = create_res.inserted_id;
-                let str_id = id.to_string();
+                let mut str_id = String::new();
+                if let Bson::ObjectId(id) = id {
+                    dbg!("id {}", id.to_string().clone());
+                    str_id.push_str(&id.to_string())
+                }
                 if str_id == String::new() {
                     Err(PortError::External("Empty string id!".to_string()).operation_err())
                 } else {
@@ -78,9 +83,11 @@ impl Taskport for Gateway {
         let deletion = db.delete_task(id).await;
         match deletion {
             Ok(delete_res) => {
+                dbg!(delete_res.deleted_count);
                 if delete_res.deleted_count > 0 {
                     Ok(true)
                 } else {
+                    dbg!("Error rabbit hole!");
                     Err(
                         PortError::External("Unable to delete the given document!".to_string())
                             .operation_err(),
@@ -127,14 +134,23 @@ impl Taskport for Gateway {
                 let tasks_input = doc_arr
                     .iter()
                     .map(|each_doc| {
+                        dbg!("each doc {:#?}", each_doc);
                         let name = each_doc.get("name").unwrap().to_string();
                         let description = each_doc.get("description").unwrap().to_string();
                         let new_task_input = Task::new(name, description);
 
                         if let Err(ref business_error) = new_task_input {
-                            inner_err = Some(PortError::External(business_error.clone()).domain_err());
+                            inner_err =
+                                Some(PortError::External(business_error.clone()).domain_err());
                         }
-                        return new_task_input.unwrap();
+                        let mut tkid = String::new();
+                        if let Bson::ObjectId(id) = each_doc.get("_id").unwrap() {
+                            dbg!(id.to_string(), id.to_hex());
+                            tkid.push_str(&id.to_string());
+                        }
+                        let mut no_wrapper = new_task_input.unwrap();
+                        no_wrapper.insert_id(&tkid);
+                        return no_wrapper;
                     })
                     .collect::<Vec<Task>>();
                 return Ok(tasks_input);

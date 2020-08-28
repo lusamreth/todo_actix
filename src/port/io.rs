@@ -1,6 +1,6 @@
-use crate::domain::todolist:: task_date::Taskdate;
-use std::fmt;
 use crate::domain::todolist::task::Task;
+use crate::domain::todolist::task_date::Taskdate;
+use std::fmt;
 pub struct DatabaseDoc<T>(T);
 
 impl<T> DatabaseDoc<T> {
@@ -16,21 +16,21 @@ impl<T: fmt::Display> fmt::Debug for DatabaseDoc<T> {
         writeln!(f, "Doc-wrapper {}", self.0)
     }
 }
-use serde::{Deserialize,Serialize};
-#[derive(Serialize,Deserialize)]
-pub struct Pipelines<T>{
-    pub(crate) pipes:Vec<T>
+use serde::{Deserialize, Serialize};
+#[derive(Serialize, Deserialize)]
+pub struct Pipelines<T> {
+    pub(crate) pipes: Vec<T>,
 }
 
-impl <T> Pipelines<T>{
-    pub fn push_pipe(mut self,pipe:T) -> Self{
+impl<T> Pipelines<T> {
+    pub fn push_pipe(mut self, pipe: T) -> Self {
         self.pipes.push(pipe);
         return self;
     }
 }
 
-
-pub struct JoinedOutput{
+#[derive(Debug, Serialize, Deserialize)]
+pub struct JoinedOutput {
     pub created_at: Taskdate,
     // likely to change
     pub modifed_at: Option<Taskdate>,

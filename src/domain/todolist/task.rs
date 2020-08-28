@@ -1,10 +1,10 @@
 // mod task_date;
-use super::{task_date::Taskdate,BussRes};
+use super::{task_date::Taskdate, BussRes};
 use serde::{Deserialize, Serialize};
 #[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
-    // task_id:String,
+    task_id: String,
     pub name: String,
     pub created_at: Taskdate,
     pub modified_at: Taskdate,
@@ -16,12 +16,11 @@ pub struct Task {
 // name could be null or
 #[allow(dead_code)]
 impl Task {
-    pub fn new(name: String, desc: String) -> BussRes<Self,String> {
+    pub fn new(name: String, desc: String) -> BussRes<Self, String> {
         let now = Taskdate::new_local();
-        if desc.len() < 1 { 
-            
-        }
+        if desc.len() < 1 {}
         let created_task = Task {
+            task_id: String::new(),
             name,
             created_at: now.clone(),
             description: desc,
@@ -30,7 +29,10 @@ impl Task {
             modified_at: now,
         };
 
-        return Ok(created_task)
+        return Ok(created_task);
+    }
+    pub fn insert_id(&mut self, id: &str) {
+        self.task_id.push_str(id);
     }
     pub fn insert_created_at(&mut self, cta: Taskdate) {
         self.created_at = cta;

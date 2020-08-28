@@ -3,7 +3,7 @@ use crate::domain::resporitory_interface;
 use async_trait::async_trait;
 use futures::stream::StreamExt;
 use mongodb::{
-    bson::{doc, to_bson, Bson},
+    bson::{doc, oid::ObjectId, to_bson, Bson},
     options,
 };
 use resperror::DBERROR;
@@ -27,23 +27,36 @@ impl Itaskresp for Db {
         }
     }
     async fn update_task<T: serde::Serialize>(&self, new_entity: T, id: Taskid<'_>) -> UpdateRes {
-        let to_doc = to_bson(&new_entity).unwrap();
-        if let Bson::Document(doc) = to_doc {
-            let cursor = self.collection.update_one(doc! {"_id":id}, doc, None).await;
-            match cursor {
-                Ok(ptr) => Ok(ptr),
-                Err(uerr) => Err(DBERROR::Mongodb(uerr)),
+        match ObjectId::with_string(id) {
+            Ok(objid) => {
+                let to_doc = to_bson(&new_entity).unwrap();
+                if let Bson::Document(doc) = to_doc {
+                    let cursor = self
+                        .collection
+                        .update_one(doc! {"_id":objid}, doc, None)
+                        .await;
+                    match cursor {
+                        Ok(ptr) => Ok(ptr),
+                        Err(uerr) => Err(DBERROR::Mongodb(uerr)),
+                    }
+                } else {
+                    Err(DBERROR::Bson(None))
+                }
             }
-        } else {
-            Err(DBERROR::Bson(None))
+            Err(_) => Err(DBERROR::Bson(None)),
         }
     }
     async fn delete_task(&self, id: &str) -> DeleteRes {
-        let query = doc! {"_id":id};
-        let del_cursor = self.collection.delete_one(query, None).await;
-        match del_cursor {
-            Ok(delc) => Ok(delc),
-            Err(del_err) => Err(DBERROR::Mongodb(del_err)),
+        match ObjectId::with_string(id) {
+            Ok(objid) => {
+                let query = doc! {"_id":objid};
+                let del_cursor = self.collection.delete_one(query, None).await;
+                match del_cursor {
+                    Ok(delc) => Ok(delc),
+                    Err(del_err) => Err(DBERROR::Mongodb(del_err)),
+                }
+            }
+            Err(del_err) => Err(DBERROR::Bson(Some(del_err.to_string()))),
         }
     }
     async fn clear_all_task(&self) -> DeleteRes {
@@ -55,16 +68,23 @@ impl Itaskresp for Db {
         }
     }
     async fn find_task(&self, id: Taskid<'_>) -> DocRes {
-        let query = doc! {"_id":id};
-        let proiritized_opt = options::FindOneOptions::builder()
-            .read_concern(options::ReadConcern::available())
-            .max_time(std::time::Duration::from_millis(200))
-            .build();
+        match ObjectId::with_string(id) {
+            Ok(id) => {
+                let query = doc! {"_id":id};
+                let proiritized_opt = options::FindOneOptions::builder()
+                    .read_concern(options::ReadConcern::available())
+                    .max_time(std::time::Duration::from_millis(200))
+                    .build();
 
-        let cursor = self.collection.find_one(query, proiritized_opt).await;
-        match cursor {
-            Ok(curs) => Ok(curs),
-            Err(cr_err) => Err(DBERROR::Mongodb(cr_err)),
+                let cursor = self.collection.find_one(query, proiritized_opt).await;
+                match cursor {
+                    Ok(curs) => Ok(curs),
+                    Err(cr_err) => Err(DBERROR::Mongodb(cr_err)),
+                }
+            }
+            Err(be) => Err(DBERROR::Bson(Some(
+                "bad string id! Cannot parse to obj!".to_string(),
+            ))),
         }
     }
     async fn find_all(&self) -> BulkRes<mongodb::bson::Document> {

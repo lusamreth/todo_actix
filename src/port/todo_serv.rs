@@ -1,8 +1,8 @@
 use super::error::PortException;
+use super::io::*;
 use crate::domain::todolist::{list::Todolist, task::Task};
 use async_trait::async_trait;
 use mongodb::bson::Document;
-use super::io::*;
 
 #[allow(type_alias_bounds)]
 #[allow(dead_code)]
@@ -20,8 +20,11 @@ pub trait Todolistport {
 }
 
 #[async_trait(?Send)]
-pub trait AggregationService{
-    async fn merge_task_list<T:serde::Serialize,R>(&self,pipes:Vec<T>) -> BundlePortRes<JoinedOutput>;
+pub trait AggregationService {
+    async fn merge_task_list<T: serde::Serialize>(
+        &self,
+        pipes: Vec<T>,
+    ) -> BundlePortRes<JoinedOutput>;
 }
 pub trait BsonConvertor {
     fn to_bson(&self) -> Document;
@@ -36,5 +39,5 @@ pub trait Taskport {
     async fn list_all(&self) -> BundlePortRes<Task>;
 }
 
-type FutureGateway<T> = std::pin::Pin<Box< dyn futures::Future<Output = T>>>;
+type FutureGateway<T> = std::pin::Pin<Box<dyn futures::Future<Output = T>>>;
 pub type GatewayFactory<T> = Box<dyn FnOnce() -> FutureGateway<T>>;

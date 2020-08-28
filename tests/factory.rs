@@ -82,7 +82,7 @@ async fn init_mong() {
             None,
         )
         .await;
-        
+
     // let aggro = shoot.aggregate(vec![doc! {}],None).await;
     println!("laz3er {:?}", shooa.unwrap())
 }

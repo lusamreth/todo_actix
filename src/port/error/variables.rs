@@ -1,15 +1,14 @@
 use super::*;
-pub enum OperationalSubtype{
+pub enum OperationalSubtype {
     NOTFOUND,
     IO,
-    INVALIDINPUT
-}
-
-pub enum BussinessErrorSubtype{
     INVALIDINPUT,
-    CONFLICTS
 }
 
+pub enum BussinessErrorSubtype {
+    INVALIDINPUT,
+    CONFLICTS,
+}
 
 pub trait Exception {
     fn extend_input(&self) -> PortException;
@@ -19,8 +18,7 @@ pub trait Exception {
     fn assert_type(&mut self, input_type: String, sub_type: String) -> PortException;
 }
 
-
-pub trait BussinessError{
+pub trait BussinessError {
     fn domain_err(&mut self) -> PortException;
 }
 pub trait OptError {
@@ -34,14 +32,13 @@ impl From<OperationalSubtype> for String {
         match hs {
             OperationalSubtype::NOTFOUND => String::from("not-found"),
             OperationalSubtype::IO => String::from("io-error"),
-            OperationalSubtype::INVALIDINPUT => String::from("invalid-input")
+            OperationalSubtype::INVALIDINPUT => String::from("invalid-input"),
         }
-    } 
+    }
 }
 
-impl Into<String> for BussinessErrorSubtype{
+impl Into<String> for BussinessErrorSubtype {
     fn into(self) -> String {
         todo!()
     }
-    
 }

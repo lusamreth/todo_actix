@@ -2,7 +2,7 @@ use crate::domain::resporitory_interface::resperror::DBERROR;
 mod variables;
 pub use variables::*;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum PortError {
     Internal(String),
     External(String),
@@ -18,7 +18,7 @@ PortErrorExtender {
 **/
 
 //sub-type is dynamic since the coverage is not too broad;
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct PortException {
     pub main_type: String,
     pub sub_type: String,
@@ -27,7 +27,7 @@ pub struct PortException {
 }
 
 impl BussinessError for PortError {
-    fn domain_err(&mut self) -> PortException{
+    fn domain_err(&mut self) -> PortException {
         let msg = self.transfer();
         dbg!(msg);
         // debug
@@ -104,9 +104,11 @@ impl Exception for PortError {
         default.sub_type = sub_type;
         match self {
             PortError::Internal(x) => {
+                dbg!(x);
                 default.interface_type = Some(PortError::Internal(String::new()))
             }
             PortError::External(y) => {
+                dbg!(y);
                 default.interface_type = Some(PortError::External(String::new()))
             }
         }
@@ -133,11 +135,13 @@ impl Into<PortException> for DBERROR {
         }
     }
 }
-use std::fmt::{Display,Formatter};
+use std::fmt::{Display, Formatter};
 impl Display for PortException {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f,"main-type : {}\nsub-type : {}\nmessage:{}\ninterface_type : {:?}\n",self.main_type,self.sub_type,self.message,self.interface_type)
-    } 
+        write!(
+            f,
+            "main-type : {}\nsub-type : {}\nmessage:{}\ninterface_type : {:?}\n",
+            self.main_type, self.sub_type, self.message, self.interface_type
+        )
+    }
 }
-
-

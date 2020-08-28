@@ -4,9 +4,9 @@ use crate::port::error::*;
 use crate::port::todo_serv::Taskport;
 use chrono::Weekday;
 type EditRes<T> = UsecaseRes<Output<T>, PortException>;
-use serde::{Serialize,Deserialize};
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-#[derive(Serialize,Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct UpdateTaskField {
     pub name: String,
     pub desc: String,
@@ -52,7 +52,7 @@ async fn proxy(
     let update = repo.update_task(&id, new_fields).await;
     if let Some(invoke_err) = invoke_err {
         let throwed: Result<Output<()>, PortException> = Err(invoke_err);
-        return throwed
+        return throwed;
     }
     match update {
         Ok(_) => Ok(Output { payload: None }),
@@ -67,10 +67,10 @@ pub async fn build_executor(comp_time: Option<Taskdate>) -> ExecFun {
             let input_desc = new_fields.desc.to_string();
             let mut catch_err: Option<PortException> = None;
             let new_task = Task::new(input_name, input_desc);
-            let mut buffer= Vec::with_capacity(1);
+            let mut buffer = Vec::with_capacity(1);
 
             match new_task {
-                Ok(mut new_task) => { 
+                Ok(mut new_task) => {
                     if let Some(date) = comp_time {
                         new_task.finish(date)
                     } else {
@@ -86,15 +86,20 @@ pub async fn build_executor(comp_time: Option<Taskdate>) -> ExecFun {
                     }
                     new_task.insert_modified_at(Taskdate::new_local());
                     buffer.push(new_task)
-                },
+                }
                 Err(domain_err) => {
                     catch_err = Some(PortError::External(domain_err).domain_err());
                 }
             }
-            if let None = buffer.get(1){
+            if let None = buffer.get(1) {
                 catch_err = Some(PortError::External(String::from("Empty buffer!")).extend_input())
             };
-            let oem = Box::pin(proxy(repo, buffer.get(1).unwrap().to_owned(), id.to_string(), catch_err));
+            let oem = Box::pin(proxy(
+                repo,
+                buffer.get(1).unwrap().to_owned(),
+                id.to_string(),
+                catch_err,
+            ));
             return oem;
         };
 

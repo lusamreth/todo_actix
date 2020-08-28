@@ -33,22 +33,19 @@ async fn test_injector() {
 }
 use actix_web::web;
 
-async fn proxy(p:String) -> String{
-   format!("from proxy async param : {}",p)
+async fn proxy(p: String) -> String {
+    format!("from proxy async param : {}", p)
 }
 type Exec = Box<dyn FnOnce(String) -> Pin<Box<dyn Future<Output = String> + 'static>>>;
 
-fn generate_proxy() -> Exec{
-    let closure:Exec = Box::new(move |a| {
-        Box::pin(proxy(a))
-    });
+fn generate_proxy() -> Exec {
+    let closure: Exec = Box::new(move |a| Box::pin(proxy(a)));
     return closure;
 }
 
 #[actix_rt::test]
-async fn test_proxy_gen(){
+async fn test_proxy_gen() {
     let gen = generate_proxy();
-    let result:String = gen("apple".to_string()).await;
-    println!("{}",result);
+    let result: String = gen("apple".to_string()).await;
+    println!("{}", result);
 }
-

@@ -1,19 +1,18 @@
 // the function is : create,append[updater],remove,done,progress,dued,list-tasks
 use crate::domain::todolist;
 use serde::{Deserialize, Serialize};
-use todolist::task::Task;
 use todolist::task_date::Taskdate;
 #[derive(Serialize, Deserialize)]
 pub struct Todolist {
-    created_at: Taskdate,
+    pub created_at: Taskdate,
     // likely to change
-    modifed_at: Option<Taskdate>,
-    done: bool,
+    pub modifed_at: Taskdate,
+    pub done: bool,
     //dynamic
-    progress: f32,
-    list_name: String,
-    due_date: Option<Taskdate>,
-    dued: bool,
+    pub progress: f32,
+    pub list_name: String,
+    pub due_date: Option<Taskdate>,
+    pub dued: bool,
     // dynamic!
     pub task_store: TaskStorage,
 }
@@ -34,18 +33,14 @@ impl TaskStorage {
             count: 0,
         };
     }
-    pub fn empty(&self) -> bool{
-        self.count == 0
-    }
 }
 
 #[allow(dead_code)]
 impl Todolist {
     pub fn new(name: &str) -> Self {
-        let new_tk = Taskdate::new_local();
         return Todolist {
-            created_at: new_tk,
-            modifed_at: None,
+            created_at: Taskdate::new_local(),
+            modifed_at: Taskdate::new_local(),
             done: false,
             due_date: None,
             dued: false,

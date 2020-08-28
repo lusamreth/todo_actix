@@ -5,8 +5,8 @@ use crate::usecase::*;
 pub mod append_list;
 pub mod create_list;
 pub mod delete_list;
+pub mod list_tasks;
 pub mod search_list;
-pub mod join_task_to_list;
 
 //Docs  or side-note?:
 /*

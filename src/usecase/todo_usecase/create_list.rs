@@ -9,6 +9,7 @@ type InsertId = String;
 pub async fn execute(db: impl Todolistport, name: String) -> CreationRes<InsertId> {
     dbg!("Creating todolist!");
     let new = Todolist::new(name.as_str());
+    dbg!(&new);
     let creation = db.create_list(new).await;
     match creation {
         Ok(res) => Ok(Output { payload: Some(res) }),

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Local, Utc, Weekday};
+use chrono::{DateTime, Datelike, Local, Timelike, Utc, Weekday};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -53,7 +53,8 @@ impl Taskdate {
         let month = now.month();
         let year = now.year();
         let num_day = now.day();
-        let cur_time = now.time().to_string();
+        let cur_time = format!("{}:{}:{}", now.hour(), now.minute(), now.second());
+
         dbg!(cur_time.clone());
         println!("tmz {:?}", now.timezone());
         return {
@@ -71,9 +72,29 @@ impl Taskdate {
         return Taskdate::init_date(new_lc);
     }
     pub fn from_string(existed_date: String) -> Self {
-        println!("{}", existed_date);
-        let dt =
-            DateTime::parse_from_rfc2822(&existed_date).expect("Wrong input format in datetime!");
+        let spliter = existed_date.split_whitespace().collect::<Vec<&str>>();
+        let mut final_form = String::new();
+        for (idx, b_var) in spliter.into_iter().enumerate() {
+            if idx == 4 {
+                let mut slots = Vec::with_capacity(3);
+                b_var.split(':').for_each(|var_time| {
+                    let rounded = var_time.parse::<f64>().unwrap().round();
+                    slots.push(rounded as i64);
+                });
+                let form = format!("{}:{}:{}", slots[0], slots[1], slots[2]);
+                dbg!(&form);
+                final_form.push_str(&format!("{} ", form))
+            } else {
+                final_form.push_str(&format!("{} ", b_var))
+            }
+        }
+
+        dbg!("{}", &final_form);
+        //Fri, 21 Aug 2020 14:41:17.31291231923 GMT
+
+        let dt = DateTime::parse_from_rfc2822(&final_form.trim())
+            .expect("Wrong input format in datetime!");
+        // DateTime::parse_from_str(&existed_date, UNIVERSAL_FORM).expect("Wrong input format in datetime!");
         Taskdate::init_date(dt)
     }
     pub fn from_timestamp(tms: i64) -> Self {
@@ -105,11 +126,13 @@ mod tts {
     #[test]
     fn test_taskdate() {
         // 1983 Apr 13 12:09:14.274 +0000
-        let date_string = String::from("Wed, 18 Feb 2015 23:16:09 GMT");
+        let date_string = String::from("Fri, 21 Aug 2020 14:41:17.31291231923 GMT");
         let _new_date = Taskdate::new_local();
         let expo = Taskdate::from_string(date_string.clone());
-        println!("{}", _new_date.to_string());
-        assert_eq!(expo.to_string().clone(), date_string);
+        let back_to_str = expo.to_string();
+        println!("{:#?}", (_new_date.to_string(), _new_date));
+        println!("{:?}", expo);
+        assert_eq!(expo.to_string().clone(), "Fri, 21 Aug 2020 14:41:17 GMT");
         //480941600 -> float 9 \\ truncate 3 -> 9 - 7;
     }
     #[test]
