@@ -34,6 +34,11 @@ fn fetch_env(arg: &str) -> String {
         Err(var_err) => panic!("No such variable {} exists \ndetails : {}", arg, var_err),
     }
 }
-pub async fn make_gateway() -> Gateway {
+pub async fn task_gateway() -> Gateway {
     Gateway::establish("TODO_TASK_COLLECTION", fetch_env).await
+}
+
+pub async fn list_gateway() -> Gateway {
+    Gateway::establish("TODO_LIST_COLLECTION", fetch_env).await
+
 }

@@ -15,3 +15,14 @@ pub async fn execute(repo: impl Taskport, id: &str) -> DeletionRes<bool> {
         Err(err) => Err(err),
     }
 }
+
+pub async fn multiple_execute(repo: impl Taskport,ids:Vec<String>) -> DeletionRes<i64>{
+    dbg!(&ids);
+    let mul_exec = repo.delete_many_task(ids).await;
+    match mul_exec {
+        Ok(itm) => Ok(Output{
+            payload:Some(itm)
+        }),
+        Err(err) => Err(err)
+    }
+}

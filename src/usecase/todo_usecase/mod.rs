@@ -7,7 +7,7 @@ pub mod create_list;
 pub mod delete_list;
 pub mod list_tasks;
 pub mod search_list;
-
+pub mod remove_task;
 //Docs  or side-note?:
 /*
 // Don't Leak responsibility of presenter! Such as returning message

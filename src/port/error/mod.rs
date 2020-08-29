@@ -70,16 +70,16 @@ impl PortError {
     }
 
     // kinda uselesss???
-    pub fn bundle_emit(buffer: Vec<Self>) {
-        buffer.iter().for_each(|each_err| {
-            println!("Emiting from bundles!");
-            if let PortError::Internal(_) = each_err {
-                each_err.emit_internal();
-            } else {
-                each_err.transfer();
-            }
-        })
-    }
+    // pub fn bundle_emit(buffer: Vec<Self>) {
+    //     buffer.iter().for_each(|each_err| {
+    //         println!("Emiting from bundles!");
+    //         if let PortError::Internal(_) = each_err {
+    //             each_err.emit_internal();
+    //         } else {
+    //             each_err.transfer();
+    //         }
+    //     })
+    // }
 }
 
 impl OptError for PortError {

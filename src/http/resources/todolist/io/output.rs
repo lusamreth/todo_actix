@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreationJson<T> {
     pub(crate) details: T,
-    pub(crate) creation_id: String,
+    pub appended_tasks:Vec<String>,
     pub timestamp: i64,
 }
 
@@ -35,9 +35,10 @@ pub enum DelType {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DeletionJson {
-    acknowledegement: bool,
-    deletion_type: DelType,
-    deleted_date: String,
+    pub acknowledegement: bool,
+    pub deletion_type: DelType,
+    pub deleted_date: String,
+    pub task_count:i64
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -71,4 +72,23 @@ impl<T: Serialize> DefaultOutput<FinderRelation> for FinderJson<T> {
     }
 }
 
+#[derive(Serialize,Debug)]
+pub struct DeleteRelation{
+    deleted:Chainlink
+}
+
 impl<T: Serialize> DefaultOutput<CreationRelation> for CreationJson<T> {}
+impl DefaultOutput<DeleteRelation> for DeletionJson {
+    fn json_output(self, id: Option<String>) -> OutputJson<Self, DeleteRelation> {
+        let relation = DeleteRelation {
+            deleted: Chainlink::new()
+                .other_link(format!("/lists/{}", id.clone().unwrap_or(String::new())).as_str()),
+        };
+        OutputJson {
+            data_type: String::from("Task"),
+            id,
+            attributes: self,
+            relationship: Some(relation),
+        }
+    }
+}

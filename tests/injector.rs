@@ -31,7 +31,6 @@ async fn test_injector() {
     let res = new_dep.execute("finder").await;
     assert_eq!(res, "omomomom")
 }
-use actix_web::web;
 
 async fn proxy(p: String) -> String {
     format!("from proxy async param : {}", p)

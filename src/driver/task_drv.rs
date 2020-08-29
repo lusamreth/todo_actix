@@ -33,7 +33,7 @@ impl Itaskresp for Db {
                 if let Bson::Document(doc) = to_doc {
                     let cursor = self
                         .collection
-                        .update_one(doc! {"_id":objid}, doc, None)
+                        .update_one(doc! {"task_id":objid}, doc, None)
                         .await;
                     match cursor {
                         Ok(ptr) => Ok(ptr),
@@ -49,7 +49,7 @@ impl Itaskresp for Db {
     async fn delete_task(&self, id: &str) -> DeleteRes {
         match ObjectId::with_string(id) {
             Ok(objid) => {
-                let query = doc! {"_id":objid};
+                let query = doc! {"task_id":objid};
                 let del_cursor = self.collection.delete_one(query, None).await;
                 match del_cursor {
                     Ok(delc) => Ok(delc),
@@ -59,8 +59,13 @@ impl Itaskresp for Db {
             Err(del_err) => Err(DBERROR::Bson(Some(del_err.to_string()))),
         }
     }
-    async fn clear_all_task(&self) -> DeleteRes {
-        let query = doc! {};
+    async fn delete_many(&self,queries:Vec<String>) -> DeleteRes {
+        let bq = queries.into_iter().map(|itm| Bson::String(itm)).collect::<Vec<Bson>>();
+        let query = doc! {
+            "task_id":{
+                "$in":bq
+            }
+        };
         let clt_cursor = self.collection.delete_many(query, None).await;
         match clt_cursor {
             Ok(cr) => Ok(cr),
@@ -70,7 +75,7 @@ impl Itaskresp for Db {
     async fn find_task(&self, id: Taskid<'_>) -> DocRes {
         match ObjectId::with_string(id) {
             Ok(id) => {
-                let query = doc! {"_id":id};
+                let query = doc! {"task_id":id};
                 let proiritized_opt = options::FindOneOptions::builder()
                     .read_concern(options::ReadConcern::available())
                     .max_time(std::time::Duration::from_millis(200))
@@ -82,7 +87,7 @@ impl Itaskresp for Db {
                     Err(cr_err) => Err(DBERROR::Mongodb(cr_err)),
                 }
             }
-            Err(be) => Err(DBERROR::Bson(Some(
+            Err(_) => Err(DBERROR::Bson(Some(
                 "bad string id! Cannot parse to obj!".to_string(),
             ))),
         }

@@ -101,6 +101,25 @@ impl Taskport for Gateway {
         }
     }
 
+    async fn delete_many_task(&self,bulk_id:Vec<String>) -> PortRes<i64>{
+        let db = (self.col)().await;
+        let len = bulk_id.len() as i64;
+        let many_deletion = db.delete_many(bulk_id).await;
+        match many_deletion{
+            Ok(del_res) => {
+                let count = del_res.deleted_count as i64;
+                dbg!(count);
+                if count < len{
+                    Err(PortError::External("Deletion operations are not completed!".to_string()).operation_err())
+                }else{
+                    Ok(count)
+                }
+               
+            }
+            Err(db_err) => Err(PortError::convert(db_err))
+        }
+    }
+
     async fn update_task(&self, id: &str, new_document: Task) -> PortRes<()> {
         let db = (self.col)().await;
         let update_opt = db.update_task(new_document, id).await;

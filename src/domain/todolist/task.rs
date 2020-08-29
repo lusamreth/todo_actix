@@ -1,10 +1,11 @@
 // mod task_date;
 use super::{task_date::Taskdate, BussRes};
+use crate::domain::source;
 use serde::{Deserialize, Serialize};
 #[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
-    task_id: String,
+    pub task_id: String,
     pub name: String,
     pub created_at: Taskdate,
     pub modified_at: Taskdate,
@@ -18,9 +19,11 @@ pub struct Task {
 impl Task {
     pub fn new(name: String, desc: String) -> BussRes<Self, String> {
         let now = Taskdate::new_local();
+        let new_id = source::create_id(format!("{}?#{}",&name,&desc));
+
         if desc.len() < 1 {}
         let created_task = Task {
-            task_id: String::new(),
+            task_id: new_id,
             name,
             created_at: now.clone(),
             description: desc,

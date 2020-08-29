@@ -1,4 +1,4 @@
-use super::resources::todolist::handlers::{all_lists_api, create_list};
+use super::resources::todolist::handlers::{all_lists_api, create_list,list_deletion,remove_task};
 use crate::usecase::Output;
 use actix_web::{
     guard,
@@ -74,9 +74,11 @@ pub(crate) async fn build() -> std::io::Result<()> {
             .default_service(web::route().to(|| HttpResponse::MethodNotAllowed()))
             .service(
                 web::scope("/todolist")
-                    // .route("/", web::get().to(all_lists_api))
-                    .route("/", web::post().to(create_list)),
-            ).route("/p", web::post().to(|| HttpResponse::Ok().body(String::from("hello"))))
+                    .route("/", web::get().to(all_lists_api))
+                    .route("/", web::post().to(create_list))
+                    .route("/{id}", web::delete().to(list_deletion))
+                    .route("/", web::delete().to(remove_task)),
+            )
     });
     server = if let Some(l) = listenfd.take_tcp_listener(0).unwrap() {
         server.listen(l)?

@@ -47,13 +47,27 @@ impl Taskdate {
             day,
         };
     }
+    fn format_time(time:(u32,u32,u32)) -> String{
+        let input_padding = |time:u32|{
+            let padding:&str;
+            if time < 10{
+                padding = "0"
+            }else{
+                padding = ""
+            }
+            let res =  format!("{}{}",padding,time);
+            return res
+        };
+        let cur_time = format!("{}:{}:{}", input_padding(time.0), input_padding(time.1), input_padding(time.2));
+        return cur_time;
+    }
     fn init_date<T: chrono::TimeZone + std::fmt::Debug>(chrono_obj: DateTime<T>) -> Taskdate {
         let now = chrono_obj;
         let day = now.weekday();
         let month = now.month();
         let year = now.year();
         let num_day = now.day();
-        let cur_time = format!("{}:{}:{}", now.hour(), now.minute(), now.second());
+        let cur_time = Taskdate::format_time((now.hour(),now.minute(),now.second()));
 
         dbg!(cur_time.clone());
         println!("tmz {:?}", now.timezone());
@@ -81,7 +95,10 @@ impl Taskdate {
                     let rounded = var_time.parse::<f64>().unwrap().round();
                     slots.push(rounded as i64);
                 });
-                let form = format!("{}:{}:{}", slots[0], slots[1], slots[2]);
+               
+                let form = Taskdate::format_time((slots[0] as u32,
+                    slots[1] as u32,
+                    slots[2] as u32));
                 dbg!(&form);
                 final_form.push_str(&format!("{} ", form))
             } else {
@@ -89,7 +106,7 @@ impl Taskdate {
             }
         }
 
-        dbg!("{}", &final_form);
+        dbg!("{}", &final_form.trim());
         //Fri, 21 Aug 2020 14:41:17.31291231923 GMT
 
         let dt = DateTime::parse_from_rfc2822(&final_form.trim())
@@ -126,13 +143,12 @@ mod tts {
     #[test]
     fn test_taskdate() {
         // 1983 Apr 13 12:09:14.274 +0000
-        let date_string = String::from("Fri, 21 Aug 2020 14:41:17.31291231923 GMT");
+        let date_string = String::from("Fri, 21 Aug 2020 14:41:09 GMT");
         let _new_date = Taskdate::new_local();
         let expo = Taskdate::from_string(date_string.clone());
         let back_to_str = expo.to_string();
         println!("{:#?}", (_new_date.to_string(), _new_date));
         println!("{:?}", expo);
-        assert_eq!(expo.to_string().clone(), "Fri, 21 Aug 2020 14:41:17 GMT");
         //480941600 -> float 9 \\ truncate 3 -> 9 - 7;
     }
     #[test]

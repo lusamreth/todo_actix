@@ -1,7 +1,7 @@
 use crate::usecase::task_usecase::edit_task::UpdateTaskField;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone,Debug)]
 pub struct MakeTaskJson {
     pub name: String,
     pub description: String,

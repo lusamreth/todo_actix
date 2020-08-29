@@ -37,7 +37,5 @@ pub trait Taskport {
     async fn delete_task(&self, id: &str) -> PortRes<bool>;
     async fn update_task(&self, id: &str, new_document: Task) -> PortRes<()>;
     async fn list_all(&self) -> BundlePortRes<Task>;
+    async fn delete_many_task(&self,bulk_id:Vec<String>) -> PortRes<i64>;
 }
-
-type FutureGateway<T> = std::pin::Pin<Box<dyn futures::Future<Output = T>>>;
-pub type GatewayFactory<T> = Box<dyn FnOnce() -> FutureGateway<T>>;

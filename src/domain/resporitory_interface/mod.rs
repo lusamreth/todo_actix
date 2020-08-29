@@ -12,7 +12,7 @@ pub trait Itaskresp {
     where
         T: Serialize;
     async fn delete_task(&self, id: Taskid<'_>) -> DeleteRes;
-    async fn clear_all_task(&self) -> DeleteRes;
+    async fn delete_many(&self,queries:Vec<String>) -> DeleteRes;
     async fn find_task(&self, id: Taskid<'_>) -> DocRes;
     async fn find_all(&self) -> BulkRes<Document>;
 }

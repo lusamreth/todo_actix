@@ -38,10 +38,6 @@ use mongodb::{bson, bson::doc, options};
 async fn init_mong() {
     //USERNAME
     //PASSWORD
-    let username = dotenv::var("USERNAME").unwrap();
-    let password = dotenv::var("PASSWORD").unwrap();
-    let source = dotenv::var("DATABASE_NAME").unwrap();
-
     let mut cop = options::ClientOptions::parse("mongodb://localhost:27017")
         .await
         .unwrap();

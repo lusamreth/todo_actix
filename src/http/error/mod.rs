@@ -1,9 +1,7 @@
-use crate::{port::error::*, usecase::Output};
+use crate::{port::error::*};
 use actix_web::http::header;
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
-use json::object;
 use serde::{Deserialize, Serialize};
-use std::convert::Infallible;
 
 type Uri = String;
 type PartialUri = String;
@@ -32,7 +30,6 @@ impl<T: Serialize> ErrorResponse<T> {
         if msg.len() == 0 {
             self.detials = String::from("No detial avialable!")
         }
-        assert!(msg.len() >= 0);
         self.detials = msg;
     }
 

@@ -1,6 +1,6 @@
 use super::Output;
 use super::UsecaseRes;
-use crate::gateway::serializer::{list_task_linkage, match_pipeline, Matchstage};
+use crate::gateway::serializer::list_task_linkage;
 use crate::port::{error::PortException, io::*, todo_serv::AggregationService};
 
 type JoinedRes<T> = UsecaseRes<Output<T>, Vec<PortException>>;
@@ -14,7 +14,7 @@ pub async fn execute(db: impl AggregationService) -> JoinedRes<Vec<JoinedOutput>
         .into_iter()
         .map(|db_wrap| db_wrap.get_doc())
         .collect();
-
+    
     let nested = db.merge_task_list(pipes).await;
     match nested {
         Ok(output) => Ok(Output {

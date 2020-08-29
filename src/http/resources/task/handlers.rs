@@ -5,7 +5,7 @@ use actix_web::{
 };
 // use crate::gateway::make_gateway;
 use super::io::{input::*, output::*};
-use crate::gateway::make_gateway;
+use crate::gateway::task_gateway;
 use crate::http::error::*;
 use crate::http::resources::utils::*;
 use crate::http::rest::{transform_output, ContentState};
@@ -13,7 +13,7 @@ use crate::port::error::*;
 use std::time::SystemTime;
 
 pub async fn retrieve_task_api(query: web::Path<String>) -> impl Responder {
-    let gtw = make_gateway().await;
+    let gtw = task_gateway().await;
     dbg!(query.clone());
     let finder = task_finder::find_one_task(gtw, &query).await;
     match finder {
@@ -32,7 +32,7 @@ pub async fn retrieve_task_api(query: web::Path<String>) -> impl Responder {
 }
 
 pub async fn create_task_api(body: web::Json<MakeTaskJson>) -> impl Responder {
-    let gtw = make_gateway().await;
+    let gtw = task_gateway().await;
     let creation = make_task::execute(gtw, body.name.clone(), body.description.clone()).await;
 
     match creation {
@@ -58,7 +58,7 @@ pub async fn create_task_api(body: web::Json<MakeTaskJson>) -> impl Responder {
 }
 
 pub async fn edit_task_api(body: web::Json<UpdateTaskJson>) -> impl Responder {
-    let gtw = make_gateway().await;
+    let gtw = task_gateway().await;
     let time = body.completion.complete_time.clone();
 
     let target = body.target_id.clone();
@@ -116,7 +116,7 @@ pub async fn edit_task_api(body: web::Json<UpdateTaskJson>) -> impl Responder {
 }
 
 pub async fn delete_task_api(query: web::Path<String>) -> impl Responder {
-    let gtw = make_gateway().await;
+    let gtw = task_gateway().await;
     dbg!(query.clone());
     let deletion = delete_task::execute(gtw, &query).await;
     match deletion {
@@ -138,7 +138,7 @@ pub async fn delete_task_api(query: web::Path<String>) -> impl Responder {
 }
 
 pub async fn list_tasks_api() -> impl Responder {
-    let gtw = make_gateway().await;
+    let gtw = task_gateway().await;
     let listing = task_finder::list_all_tasks(gtw).await;
     match listing {
         Ok(op) => {

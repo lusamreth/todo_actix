@@ -1,4 +1,3 @@
-use actix_web::{web, App, HttpServer};
 mod db;
 use actix_rt;
 mod domain;

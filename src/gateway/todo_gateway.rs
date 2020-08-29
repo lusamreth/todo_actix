@@ -83,7 +83,7 @@ impl Todolistport for Gateway {
         match tdl {
             Ok(doc) => match doc {
                 Some(avialable) => {
-                    let name = avialable.get("name").unwrap().to_string();
+                    let name = avialable.get("list_name").unwrap().to_string();
                     let output = Todolist::new(&name);
                     return Ok(output);
                 }
@@ -125,6 +125,7 @@ impl AggregationService for Gateway {
         let aggregation = db.aggregate(pipes).await;
         match aggregation {
             Ok(bulk_res) => {
+                dbg!(&bulk_res);
                 let vjo = bulk_res
                     .into_iter()
                     .map(|res| JoinedOutput::from(res))

@@ -26,4 +26,3 @@ pub async fn find_one_task(repo: impl Taskport, id: &str) -> OneFinderRes<Task> 
     }
 }
 
-type ManyFinderRes<T> = UsecaseRes<Output<T>, MultipleExceptions>;

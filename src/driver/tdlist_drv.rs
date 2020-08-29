@@ -126,7 +126,6 @@ impl ITodoresp for Db {
     }
 
     async fn aggregate<T: serde::Serialize>(&self, pipeline: Pipeline<T>) -> BulkRes<Document> {
-        let query = doc! {};
         let mut doc_pipe = Vec::new();
         let mut err_acc = Vec::new();
 
@@ -156,6 +155,7 @@ impl ITodoresp for Db {
                     match doc {
                         Ok(doc) => docs.push(doc),
                         Err(err_doc) => {
+                            err_acc.push(DBERROR::Mongodb(err_doc));
                             let msg = format!(
                                 "Error Ocurred while aggregating data!\n details : {:#?}",
                                 err_acc

@@ -32,6 +32,7 @@ impl<T> Pipelines<T> {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JoinedOutput {
     pub created_at: Taskdate,
+    pub task_id:String,
     // likely to change
     pub modifed_at: Option<Taskdate>,
     pub done: bool,
