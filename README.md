@@ -57,18 +57,30 @@ Port : 8080
 
 # RESOURCES-ROUTES:
 ++ TODOLIST : 
-get : http://localhost:8088/tasks;
-get : http://localhost:8088/tasks/{id}/
-post : http://localhost:8088/tasks;
-delete : http://localhost:8088/tasks/{id}
-update : http://localhost:8088/tasks/{id}
+get : http://localhost:8088/tasks; : Retrieve all todolists
+
+get : http://localhost:8088/tasks/{id}/ : Retrieve one todolist
+
+post : http://localhost:8088/tasks; : Create new todo!
+
+delete : http://localhost:8088/tasks/{id} : Delete a specific one
+
+update : http://localhost:8088/tasks/{id} : update !
+
 # Inside todolist there are tasks :
 ++ TASKS :
-get : http://localhost:8088/todolist;
-get : http://localhost:8088/todolist/{id}/
-post : http://localhost:8088/todolist;
-delete : http://localhost:8088/todolist/{id}
-update : http://localhost:8088/todolist/{id}
+get : http://localhost:8088/todolist; : get all tasks
 
-# TODO: add in frontend 
-# and docker support!
+get : http://localhost:8088/todolist/{id}/ : get one task
+
+post : http://localhost:8088/todolist; : append a task
+
+delete : http://localhost:8088/todolist/{id} : delete a task
+
+update : http://localhost:8088/todolist/{id} : update a task
+
+To use it please change the mongdb address in env file and
+spin up your own mongodb instance.
+
+TODO: add in frontend 
+and docker support!
